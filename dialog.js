@@ -11,9 +11,14 @@ CKEDITOR.dialog.add('imageToolDialog', function (editor) {
                     {
                         type: 'html',
                         html: `
-                            <iframe src="${CKEDITOR.plugins.getPath('imagetool')}imagetool.html"
-                                    width="100%" height="500px" frameborder="0" style="border:1px solid #ccc;">
-                            </iframe>
+                            <div style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%;">
+                                <iframe 
+                                    src="${CKEDITOR.plugins.getPath('imagetool')}imagetool.html"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 1px solid #ccc;" 
+                                    frameborder="0"
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
                         `
                     }
                 ]
