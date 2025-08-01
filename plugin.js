@@ -6,7 +6,7 @@ CKEDITOR.plugins.add('imagetool', {
             label: 'Image Reducer Tool',
             command: 'openImageTool',
             toolbar: 'insert',
-            icon: this.path + 'icon.png'
+            icon: this.path + 'ckeditor_icon.png'
         });
 
         CKEDITOR.dialog.add('imageToolDialog', this.path + 'dialog.js');
