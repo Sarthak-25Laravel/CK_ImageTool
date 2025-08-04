@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title>DPI Reducer Tool</title>
+  <!-- Cropper.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+  <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .upload-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 0 auto 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #f8fafc;
+        }
+        
+        .drop-area.dragover {
+            background-color: #f0f8ff;
+            border-color: #3490dc;
+        }
+        
+        .drop-area p {
+            margin: 0;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .preview {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .preview-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        
+        .preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: transform 0.2s;
+        }
+        
+        .preview img:hover {
+            transform: scale(1.05);
+        }
+        
+        .preview-item .remove-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #e3342f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .preview-item:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .error {
+            color: #e3342f;
+            margin: 15px 0;
+            text-align: center;
+            min-height: 20px;
+        }
+        
+        .success {
+            color: #38c172;
+            margin: 15px 0;
+            text-align: center;
+            min-height: 20px;
+        }
+        
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        .btn-container button,
+        .btn-container #dpi {
+            width: 160px; 
+            height: 80px; 
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #3490dc;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2779bd;
+        }
+        
+        .btn-primary:disabled {
+            background-color: #b8daff;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background-color: #38c172;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #2d995b;
+        }
+        
+        .dpi-controls {
+            background-color: #8fc1ea;
+            border: 2px solid #2779bd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .dpi-controls label {
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        
+        .dpi-controls input[type="range"] {
+            width: 200px;
+            vertical-align: middle;
+        }
+        
+        .dpi-controls span {
+            font-weight: bold;
+            margin-left: 10px;
+            min-width: 40px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .drop-area {
+                padding: 30px 15px;
+            }
+            
+            .preview-item {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .btn-container button,
+            .btn-container #dpi {
+                width: 140px;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="upload-container">
+    <h1>DPI Reducer Tool</h1>
+    
+    <form id="dpiForm" enctype="multipart/form-data" method="POST" action="upload.php">   
+      <div class="drop-area" id="dropArea">
+        <p>Drag & Drop images here or click to select</p>
+        <input type="file" name="images_raw[]" id="fileInput" multiple accept="image/*" style="display: none;">
+      </div>
+
+      <div class="preview" id="preview"></div>
+      <div class="error" id="errorMsg"></div>
+      <div class="success" id="successMsg"></div>
+
+      <div class="dpi-controls" id="dpiControls" style="display: none;">
+        <label for="dpiRange">Quality:</label>
+        <input type="range" id="dpiRange" min="10" max="100" value="72">
+        <span id="dpiValue">72</span>
+      </div>
+
+      <div class="btn-container">
+        <button type="button" id="processButton" class="btn-primary" disabled>Process Images</button>
+        <button type="button" id="downloadAll" class="btn-primary" disabled>Download All</button>
+        <button type="submit" id="uploadButton" class="btn-primary" disabled>Upload to Server</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const dropArea = document.getElementById('dropArea');
+      const fileInput = document.getElementById('fileInput');
+      const preview = document.getElementById('preview');
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+      const processButton = document.getElementById('processButton');
+      const downloadAllButton = document.getElementById('downloadAll');
+      const uploadButton = document.getElementById('uploadButton');
+      const dpiRange = document.getElementById('dpiRange');
+      const dpiValue = document.getElementById('dpiValue');
+      const dpiForm = document.getElementById('dpiForm');
+
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const maxSize = 5 * 1024 * 1024;
+      const maxFiles = 10;
+
+      let originalImages = [];
+      let processedImages = [];
+
+      dpiRange.addEventListener('input', function () {
+        dpiValue.textContent = this.value;
+      });
+
+      dropArea.addEventListener('click', () => fileInput.click());
+      dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('dragover');
+      });
+      dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+        fileInput.value = '';
+      });
+
+      function handleFiles(files) {
+        if (files.length === 0) return;
+
+        errorMsg.textContent = '';
+        successMsg.textContent = '';
+
+        if (originalImages.length + files.length > maxFiles) {
+          return showError(`Maximum ${maxFiles} files allowed.`);
+        }
+
+        Array.from(files).forEach(file => {
+          if (!validTypes.includes(file.type)) {
+            return showError('Only JPG, PNG, and WebP images are allowed.');
+          }
+          if (file.size > maxSize) {
+            return showError(`File "${file.name}" exceeds 5MB limit.`);
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            originalImages.push({
+              file: file,
+              src: e.target.result
+            });
+            createPreview(file, e.target.result);
+            updateButtonStates();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function createPreview(file, src) {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+
+        const img = document.createElement('img');
+        img.src = src;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = originalImages.findIndex(img => img.src === src);
+          if (index !== -1) {
+            originalImages.splice(index, 1);
+            preview.removeChild(previewItem);
+            updateButtonStates();
+          }
+        });
+
+        previewItem.appendChild(img);
+        previewItem.appendChild(removeBtn);
+        preview.appendChild(previewItem);
+      }
+
+      processButton.addEventListener('click', async function () {
+        if (originalImages.length === 0) return;
+
+        const quality = parseInt(dpiRange.value) / 100;
+        processedImages = [];
+
+        try {
+          showSuccess('Processing images...');
+
+          for (const imgData of originalImages) {
+            const img = new Image();
+            await new Promise((resolve) => {
+              img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                canvas.toBlob((blob) => {
+                  processedImages.push({
+                    name: imgData.file.name.replace(/\.[^/.]+$/, '') + '-reduced.jpg',
+                    blob: blob
+                  });
+                  resolve();
+                }, 'image/jpeg', quality);
+              };
+              img.src = imgData.src;
+            });
+          }
+
+          downloadAllButton.disabled = false;
+          uploadButton.disabled = false;
+          showSuccess('Images processed successfully! Ready to download or upload.');
+        } catch (error) {
+          console.error('Error processing images:', error);
+          showError('Error processing images. Please try again.');
+        }
+      });
+
+      downloadAllButton.addEventListener('click', function () {
+        if (processedImages.length === 0) {
+          showError('No processed images to download. Please process first.');
+          return;
+        }
+
+        processedImages.forEach((img) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(img.blob);
+          a.download = img.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+
+        showSuccess('Download started for all processed images.');
+      });
+
+      dpiForm.addEventListener('submit', function (e) {
+        if (processedImages.length === 0) {
+          e.preventDefault();
+          showError('No processed images to upload. Please process first.');
+          return;
+        }
+
+        // Clear previous dynamic inputs
+        document.querySelectorAll('.dynamic-upload').forEach(el => el.remove());
+
+        let readersFinished = 0;
+
+        processedImages.forEach((img, i) => {
+          const reader = new FileReader();
+          reader.onload = function () {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'images[]';
+            input.classList.add('dynamic-upload');
+            input.value = reader.result;
+            dpiForm.appendChild(input);
+
+            readersFinished++;
+            if (readersFinished === processedImages.length) {
+              dpiForm.submit();
+            }
+          };
+          reader.readAsDataURL(img.blob);
+        });
+
+        e.preventDefault(); // Wait for FileReader to complete before submitting
+        showSuccess('Uploading images to server...');
+      });
+
+      function updateButtonStates() {
+        const hasImages = originalImages.length > 0;
+        processButton.disabled = !hasImages;
+        downloadAllButton.disabled = true;
+        uploadButton.disabled = true;
+
+        // Show DPI range only if images exist
+        const dpiControls = document.getElementById('dpiControls');
+        dpiControls.style.display = hasImages ? 'block' : 'none';
+      }
+
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        successMsg.textContent = '';
+      }
+
+      function showSuccess(message) {
+        successMsg.textContent = message;
+        errorMsg.textContent = '';
+      }
+    });
+  </script>
+</body>
+</html>
